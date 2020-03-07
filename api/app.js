@@ -3,8 +3,11 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const uid = require('uniqid');
 const request = require('request');
+const geolib = require('geolib')
+
+
 const app = express()
-const connection = db.createPool({
+const connection = db.createConnection({
     host: 'localhost',
     user: 'root',
     password: 'root@1441',
@@ -13,9 +16,10 @@ const connection = db.createPool({
 
 const geocoder = (address, callback) => {
     url = "https://api.mapbox.com/geocoding/v5/mapbox.places/";
-    params = ".json?access_token=pk.eyJ1IjoiYW1hbmRlc2FpMDEiLCJhIjoiY2s2N3c1czZwMDZ5YzNqcGdwMWlidndtaiJ9._ZfmHWHgOaWcanGrdMBmTg&limit=1";
+    params = ".json?access_token=pk.eyJ1IjoiZGV2NDQiLCJhIjoiY2s3aG5mM3JvMDduNTNucHJrM2U1OXU1NiJ9.W0bBWZgSPXA-WFeXJ9Qqeg&limit=1";
     request({ url: url + address + params, json: true}, (error, response) => {
         if(error || response.body.features.length === 0) {
+            console.log(error)
             callback(true, undefined)
         }
         else {
@@ -30,8 +34,6 @@ app.get('/registerpolice', (req, res) => {
     const imagelink = req.query.imagelink;
     const phoneno = req.query.phoneno;
     const address = req.query.address;
-    var latitude;
-    var longitude;
     geocoder(address, (error, response) => {
         if(error){
             const ret = {
@@ -42,39 +44,36 @@ app.get('/registerpolice', (req, res) => {
             res.send(ret)
         }
         else{
-            latitude = response.latitude;
-            longitude = response.longitude;
-        }
-    });
-
-    values = [id.toString(), fullname, imagelink, phoneno, address];
-    var response = {};
-    try{
-        connection.query("INSERT INTO `codeshastra`.`policeofficials` (`uid`, `fullname`, `imagelink`, `phoneno`, `address`, `latitude`, `longitude`) VALUES (?, ?, ?, ?, ?, ?, ?) ", values, (error) => {
-            if(error){
+            values = [id.toString(), fullname, imagelink, phoneno, address, response.latitude, response.longitude];
+            try{
+                connection.query("INSERT INTO `codeshastra`.`policeofficials` (`id`, `fullname`, `imagelink`, `phoneno`, `address`, `latitude`, `longitude`) VALUES (?, ?, ?, ?, ?, ?, ?) ", values, (error) => {
+                    if(error){
+                        response = {
+                            error: error.toString(),
+                            message: "Not Registered",
+                            status : "FAIL"
+                        }
+                        console.log(error.toString())
+                    }
+                });
+                response = {
+                    message: "Registered!",
+                    status : "OK",
+                    assigneduserid: id,
+                    latitude: response.latitude,
+                    longitude: response.longitude
+                }
+            } catch(error) {
                 response = {
                     error: error.toString(),
                     message: "Not Registered",
                     status : "FAIL"
                 }
             }
-        });
-        response = {
-            message: "Registered!",
-            status : "OK",
-            assigneduserid: id,
-            latitude: latitude,
-            longitude: longitude
-        }
-    } catch(error) {
-        response = {
-            error: error.toString(),
-            message: "Not Registered",
-            status : "FAIL"
-        }
-    }
 
-    res.send(response);
+            res.send(response);
+        }
+    });
 });
 
 app.get('/register', (req, res) => {
@@ -112,6 +111,22 @@ app.get('/register', (req, res) => {
     res.send(response);
 });
 
+app.get('/generatealert', (req, res) => {
+    const targetid = req.query.id;
+    const latitude = req.query.latitude;
+    const longitude = req.query.longitude;
+
+    var qlat = latitude.toString();
+    qlat = qlat.slice(0, 5);
+    var qlon = longitude.toString();
+    qlon = qlon.slice(0, 4);
+    sql = "SELECT * FROM policeofficials WHERE latitude LIKE `" + qlat + "` AND longitude LIKE ` " + qlon + " `";
+    connection.query(sql, undefined, (error, results, fields) => {
+        console.log(results)
+    })
+    res.send("OK")
+
+});
 
 app.listen(3000, () => {
     console.log("Listening on Port 3000");

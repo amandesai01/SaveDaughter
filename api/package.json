@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
+    "geolib": "^3.2.1",
     "http2": "^3.3.7",
     "jsonwebtoken": "^8.5.1",
     "latlng-to-zip": "0.0.2",
