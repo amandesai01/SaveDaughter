@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const uid = require('uniqid');
 const request = require('request');
 const geolib = require('geolib')
-
+const mathjs = require('mathjs')
 
 const app = express()
 const connection = db.createConnection({
@@ -13,6 +13,11 @@ const connection = db.createConnection({
     password: 'root@1441',
     database: 'codeshastra'
 });
+
+const appendObjTo = (thatArray, newObj) => {
+    const frozenObj = Object.freeze(newObj);
+    return Object.freeze(thatArray.concat(frozenObj));
+}
 
 const geocoder = (address, callback) => {
     url = "https://api.mapbox.com/geocoding/v5/mapbox.places/";
@@ -116,16 +121,99 @@ app.get('/generatealert', (req, res) => {
     const latitude = req.query.latitude;
     const longitude = req.query.longitude;
 
-    var qlat = latitude.toString();
-    qlat = qlat.slice(0, 5);
-    var qlon = longitude.toString();
-    qlon = qlon.slice(0, 4);
-    sql = "SELECT * FROM policeofficials WHERE latitude LIKE `" + qlat + "` AND longitude LIKE ` " + qlon + " `";
-    connection.query(sql, undefined, (error, results, fields) => {
-        console.log(results)
-    })
-    res.send("OK")
+    var qlat = parseFloat(latitude).toFixed(2);
+    var qlon = parseFloat(longitude).toFixed(2);
+    console.log(typeof(qlat)+ " " + typeof(qlon));
+    var qlat1 = (mathjs.evaluate(qlat + '+ 0.01')).toFixed(2);
+    var qlat2 = mathjs.evaluate(qlat + '- 0.01').toFixed(2);
+    var qlon1 = mathjs.evaluate(qlon + '+ 0.01').toFixed(2);
+    var qlon2 = mathjs.evaluate(qlon + '- 0.01').toFixed(2);
 
+
+    var selectedStations = new Array();
+    console.log(qlat+ " " + qlon);
+
+    // var sql = "SELECT * FROM policeofficials WHERE latitude LIKE `" + qlat.toString() + "` AND longitude LIKE ` " + qlon.toString() + " `";
+    connection.connect();
+    sql = "SELECT * FROM policeofficials WHERE latitude = " + qlat1 + " AND longitude = " + qlon1 + "";
+    connection.query(sql, undefined, (error, results, fields) => {
+        if(results != undefined){
+            console.log("In");
+            selectedStations.push(results[0]);
+            console.log(results[0]);
+        }
+        sql1 = "SELECT * FROM policeofficials WHERE latitude = " + qlat2 + " AND longitude = " + qlon2 + "";
+        connection.query(sql1, undefined, (error, results, fields) => {
+            if(results != undefined){
+                console.log("In1");
+                selectedStations.push(results[0]);
+                console.log(results[0]);
+            }
+            sql2 = "SELECT * FROM policeofficials WHERE latitude = " + qlat + " AND longitude = " + qlon + "";
+            connection.query(sql2, undefined, (error, results, fields) => {
+                if(results != undefined){
+                    console.log("In2");
+                    selectedStations.push(results[0]);
+                    console.log(results[0]);
+                }
+                sql3 = "SELECT * FROM policeofficials WHERE latitude = " + qlat2 + " AND longitude = " + qlon1 + "";
+                connection.query(sql3, undefined, (error, results, fields) => {
+                    if(results != undefined){
+                        console.log("In3");
+                        selectedStations.push(results[0]);
+                        console.log(results[0]);
+                    }
+                    sql4 = "SELECT * FROM policeofficials WHERE latitude = " + qlat1 + " AND longitude = " + qlon2 + "";
+                    connection.query(sql4, undefined, (error, results, fields) => {
+                        if(!(results === undefined)){
+                            console.log("In4");
+                            selectedStations.push(results[0]);
+                            console.log(results[0]);
+                        }
+                        sql5 = "SELECT * FROM policeofficials WHERE latitude = " + qlat + " AND longitude = " + qlon1 + "";
+                        connection.query(sql5, undefined, (error, results, fields) => {
+                            if(!(results === undefined)){
+                                console.log("In5");
+                                selectedStations.push(results[0]);
+                                console.log(results[0]);
+                            }
+                            sql6 = "SELECT * FROM policeofficials WHERE latitude = " + qlat + " AND longitude = " + qlon2 + "";
+                            connection.query(sql6, undefined, (error, results, fields) => {
+                                if(!(results === undefined)){
+                                    console.log("In6");
+                                    selectedStations.push(results[0]);
+                                    console.log(results[0]);
+                                }
+                                sql7 = "SELECT * FROM policeofficials WHERE latitude = " + qlat1 + " AND longitude = " + qlon + "";
+                                connection.query(sql7, undefined, (error, results, fields) => {
+                                    if(!(results === undefined)){
+                                        console.log("In7");
+                                        selectedStations.push(results[0]);
+                                        console.log(results[0]);
+                                    }
+                                    sql8 = "SELECT * FROM policeofficials WHERE latitude = " + qlat2 + " AND longitude = " + qlon + "";
+                                    connection.query(sql8, undefined, (error, results, fields) => {
+                                        if(!(results === undefined)){
+                                            console.log("In8");
+                                            selectedStations.push(results[0]);
+                                            console.log(results[0]);
+                                        }
+                                        console.log(selectedStations);
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+
+
+    connection.end();
+
+    res.send("OK")
 });
 
 app.listen(3000, () => {

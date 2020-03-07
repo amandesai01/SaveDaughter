@@ -14,6 +14,7 @@
     "http2": "^3.3.7",
     "jsonwebtoken": "^8.5.1",
     "latlng-to-zip": "0.0.2",
+    "mathjs": "^6.6.1",
     "mysql": "^2.18.1",
     "request": "^2.88.2",
     "uniqid": "^5.2.0"
