@@ -10,5 +10,5 @@ The main challenge of this project is locating nearest police stations and segre
 ### Screenshots:
 
 
-_This App Was Made Within 20hrs in Hackathon at CodeShastra - D J Sanghvi_
+_This App Was Made Within 20hrs in Hackathon at CodeShastra - D J Sanghvi._ <br>
 _This App made it to Top 10 among 80 Teams_
