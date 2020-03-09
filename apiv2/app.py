@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import uuid
 import mysql.connector
 import requests
+
 app = Flask(__name__)
 
 def connect():
@@ -96,6 +97,84 @@ def loginuser():
         return jsonify({ "status" : "FAIL", "message" : "WRONG PASSWORD OR PHONENO"})
     return jsonify({ "status" : "OK", "message": "LOGGEDIN"})
 
+@app.route('/nearestps')
+def nearestps():
+    latitude = request.args.get('latitude')
+    longitude = request.args.get('longitude')
+
+    qlat = round(float(latitude), 2)
+    qlon = round(float(longitude), 2)
+
+    qlat1 = round((qlat + 0.01), 2)
+    qlat2 = round((qlat - 0.01), 2)
+    qlon1 = round((qlon + 0.01), 2)
+    qlon2 = round((qlon - 0.01), 2)
+
+    selectedStations = []
+
+    con = connect()
+    cursor = con.cursor()
+    sql = "SELECT id FROM policeofficials WHERE latitude = " + str(qlat1 )+ " AND longitude = " + str(qlon1 )+ ""
+    sql1 = "SELECT id FROM policeofficials WHERE latitude = " +str( qlat2) + " AND longitude = " +str( qlon2) + ""
+    sql2 = "SELECT id FROM policeofficials WHERE latitude = " +str( qlat )+ " AND longitude = " + str(qlon ) + ""
+    sql3 = "SELECT id FROM policeofficials WHERE latitude = " +str( qlat2) + " AND longitude = " +str( qlon1) + ""
+    sql4 = "SELECT id FROM policeofficials WHERE latitude = " +str( qlat1) + " AND longitude = " +str( qlon2) + ""
+    sql5 = "SELECT id FROM policeofficials WHERE latitude = " +str( qlat )+ " AND longitude = " + str(qlon1 )+ ""
+    sql6 = "SELECT id FROM policeofficials WHERE latitude = " +str( qlat )+ " AND longitude = " + str(qlon2 )+ ""
+    sql7 = "SELECT id FROM policeofficials WHERE latitude = " +str( qlat1) + " AND longitude = " +str( qlon )+ ""
+    sql8 = "SELECT id FROM policeofficials WHERE latitude = " +str( qlat2) + " AND longitude = " +str( qlon )+ ""
+    
+    cursor.execute(sql)
+    res = cursor.fetchall()
+    if len(res) > 0:
+        selectedStations.append(res[0][0])
+    cursor.execute(sql1)
+    res1 = cursor.fetchall()
+    if len(res1) > 0:
+        selectedStations.append(res1[0][0])
+    cursor.execute(sql2)
+    res2 = cursor.fetchall()
+    if len(res2) > 0:
+        selectedStations.append(res2[0][0])
+    cursor.execute(sql3)
+    res3 = cursor.fetchall()
+    if len(res3) > 0:
+        selectedStations.append(res3[0][0])
+    cursor.execute(sql4)
+    res4 = cursor.fetchall()
+    if len(res4) > 0:
+        selectedStations.append(res4[0][0])
+    cursor.execute(sql5)
+    res5 = cursor.fetchall()
+    if len(res5) > 0:
+        selectedStations.append(res5[0][0])
+    cursor.execute(sql6)
+    res6 = cursor.fetchall()
+    if len(res6) > 0:
+        selectedStations.append(res6[0][0])
+    cursor.execute(sql7)
+    res7 = cursor.fetchall()
+    if len(res7) > 0:
+        selectedStations.append(res7[0][0])
+    cursor.execute(sql8)
+    res8 = cursor.fetchall()
+    if len(res8) > 0:
+        selectedStations.append(res8[0][0])
+    if len(selectedStations) == 0:
+        return jsonify({})
+    selectedNames = []
+    for i in selectedStations:
+        quer = "SELECT address FROM policeofficials WHERE id = %s"
+        cursor.execute(quer, (i, ))
+        res = cursor.fetchone()
+        tdic = {
+            "phone":res[0]
+        }
+        selectedNames.append(res[0])
+    print(selectedNames)
+    return jsonify({"values": selectedNames})
+
+
 @app.route('/generatealert')
 def generatealert():
     targetid = request.args.get('id')
@@ -166,8 +245,33 @@ def generatealert():
         sql = "UPDATE policeofficials SET CrimeCount = CrimeCount + 1 WHERE id = %s"
         cursor.execute(sql, (i,))
         con.commit()
-    return jsonify({})
-    
+    selectedNos = []
+    for i in selectedStations:
+        quer = "SELECT phoneno FROM policeofficials WHERE id = %s"
+        cursor.execute(quer, (i, ))
+        res = cursor.fetchone()
+        tdic = {
+            "phone":res[0]
+        }
+        selectedNos.append(res[0])
+    print(selectedNos)
+    return jsonify({"values": selectedNos})
+            
+@app.route('/getcrimes')
+def getcrimes():
+    conn = connect()
+    cursor = conn.cursor()
+    quer = "SELECT address, CrimeCount FROM policeofficials";
+    cursor.execute(quer)
+    result = cursor.fetchall();
+    ret = []
+    for i in result:
+        dic = {}
+        dic['address'] = i[0]
+        dic['count'] = i[1]
+        ret.append(dic)
+    print(ret)
+    return jsonify(ret)
 
 
 if __name__ == '__main__':
